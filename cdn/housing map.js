@@ -4,19 +4,19 @@ const cdn_host = "http://127.0.01:8887/cdn/",
       data_host = "http://127.0.01:8887/data/"
 
 const config = {
-    data_file: data_host + "latest housing valuation.csv",
-    id_col: 'FIPS',
+    data_file: data_host+"latest housing valuation.csv",
+    id_col: 'Fips',
     name_cols: ['County', 'State'],
-    y_col: 'Total Return',
-    value_cols: ['Total Return', 'Net Annual Return'],
+    y_col: '% Total Return',
+    value_cols: ['% Total Return', '% Annual Return'],
     quant: 'scaleQuantile',
     colors: ['red', 'green'],
     number_of_colors: 7,
-    legend_div: "#map-legend",
-    map_div: "#main-map",
+    map_div: "#yap-canvas",
+    legend_div: "#yap-legend",
     info_table: "#info-table",
     data_type: "",
-    geo_file: data_host + "usgeo.json",
+    geo_file: cdn_host+"us-counties.geo.json",
 }
 
 config.data_type = config.data_type || config.data_file.split('.').pop();
@@ -27,20 +27,21 @@ scripts = [
     "crossfilter.min.js",
     "d3.v3.min.js",
     "d3.tip.v0.6.3.js",
-]
+];
 
 async function loadScripts (scripts) {
     for(let url of scripts) {
-        await $.getScript(cdn_host + url) 
+        await $.getScript(cdn_host + url)
     }
 }
+
 loadScripts(scripts).then(init)
 
 
 function init () {
     path = d3.geo.path()
     quants = d3.scale.quantile()
-    svg = d3.select(config.map_div).append("svg")//.attr("class", "yap-map")
+    svg = d3.select(config.map_div).classed("yap-canvas", true).append("svg")
     tip = d3.tip().attr('class', 'yap-tip').offset([-10,0])
 
     color = d3.scale.linear().domain(config['colors'].map((a,i)=>i)).interpolate(d3.interpolateHsl).range(config['colors']);
@@ -73,8 +74,8 @@ function ready(dataframe, geos) {
         return config['name_cols'].map(col => dataframe.get(col).get(geo.id))
                     .filter(x=>x !== undefined)
                     .join(', ')
-               + "<br>" 
-               + config.value_cols.map(val => val + ": " + dataframe.get(val).get(geo.id)).join('%<br>') + '%'
+               + "<br>"
+               + config['value_cols'].map(val => val + ": " + dataframe.get(val).get(geo.id)).join('<br>')
     });
     svg.call(tip)
 
@@ -91,6 +92,10 @@ function ready(dataframe, geos) {
     draw_legend(config.legend_div, values);
 
     tmp = dataframe
+
+
+
+
 }
 
 
@@ -104,7 +109,7 @@ function viewBox(geos) {
     boxes = geos.map(path.bounds)
     corners = flatten_nested_geos_to_coordinates(boxes)
     corners_x = corners.map(corner=>corner[0]).filter(isFinite)
-    // seperate x eletemts and filter finites 
+    // seperate x eletemts and filter finites
     corners_y = corners.map(corner=>corner[1]).filter(isFinite)
     // separet y elements and filter finites
     box = [Math.min(...corners_x)//x
@@ -137,7 +142,7 @@ function info_table(geo) {
   spans = key_value.map(x => '<span>' + x[0] +'</span>' + '<span style="position: absolute; right:1em;" >' + x[1] +'</span> <br>')
 
   //document.getElementById(config.info_table).innerHTML = spans.join('')
-  d3.select(config.info_table).html(spans.join(''))
+  d3.select(config.info_table).classed("yap-canvas", true).html(spans.join(''))
 
 }
 
@@ -149,9 +154,9 @@ function draw_boundries(svg, geo_data) {
 function draw_legend(legend_div, values) {
     bar_width = 5;//in em
 
-    var legend = d3.select(legend_div)//.attr("class", "yap-legend")
+    var legend = d3.select(legend_div).classed("yap-caption", true)
     for (var i = 0; i < colorscale.length; i++) {
-        //for each color create a rect, color it, text it, style it 
+        //for each color create a rect, color it, text it, style it
         legend
         .append("rect")
         .attr("style", "background-color: " + colorscale[i])
